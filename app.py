@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 import warnings
+import os
 warnings.filterwarnings('ignore')
 
 # ── page config ───────────────────────────────────────────────
@@ -151,15 +152,14 @@ hr {
 # ── load models ───────────────────────────────────────────────
 @st.cache_resource
 def load():
-    reg      = joblib.load('models/reg_model.pkl')
-    cls      = joblib.load('models/cls_model.pkl')
-    le       = joblib.load('models/label_encoder.pkl')
-    ui       = joblib.load('models/user_item.pkl')
-    features = joblib.load('models/features.pkl')
-    df       = pd.read_csv('data/processed_data.csv')
+    base     = os.path.dirname(os.path.abspath(__file__))
+    reg      = joblib.load(os.path.join(base, 'models', 'reg_model.pkl'))
+    cls      = joblib.load(os.path.join(base, 'models', 'cls_model.pkl'))
+    le       = joblib.load(os.path.join(base, 'models', 'label_encoder.pkl'))
+    ui       = joblib.load(os.path.join(base, 'models', 'user_item.pkl'))
+    features = joblib.load(os.path.join(base, 'models', 'features.pkl'))
+    df       = pd.read_csv(os.path.join(base, 'data', 'processed_data.csv'))
     return reg, cls, le, ui, features, df
-
-reg, cls, le, user_item, features, df = load()
 
 
 # ── sidebar ───────────────────────────────────────────────────
