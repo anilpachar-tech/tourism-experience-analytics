@@ -160,6 +160,7 @@ def load():
     features = joblib.load(os.path.join(base, 'models', 'features.pkl'))
     df       = pd.read_csv(os.path.join(base, 'data', 'processed_data.csv'))
     return reg, cls, le, ui, features, df
+    reg, cls, le, user_item, features, df = load()
 
 
 # ── sidebar ───────────────────────────────────────────────────
