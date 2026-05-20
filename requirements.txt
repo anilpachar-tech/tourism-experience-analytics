@@ -5,7 +5,6 @@ seaborn
 scikit-learn
 xgboost
 lightgbm
-scikit-surprise
 streamlit
 joblib
 jupyter
