@@ -95,7 +95,7 @@ tourism-analytics/
 
 ```bash
 # 1. clone repo
-git clone https://github.com/YOUR_USERNAME/tourism-analytics.git
+git clone https://github.com/anilpachar-tech/tourism-experience-analytics.git
 cd tourism-analytics
 
 # 2. install dependencies
