@@ -3,9 +3,10 @@ import pandas as pd
 import joblib
 import warnings
 import os
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 warnings.filterwarnings('ignore')
 
-# ── page config ───────────────────────────────────────────────
 st.set_page_config(
     page_title="TravelIQ — Tourism Analytics",
     page_icon="🌍",
@@ -13,143 +14,27 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ── custom CSS ────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
-
-html, body, [class*="css"] {
-    font-family: 'DM Sans', sans-serif;
-}
-
-/* background */
-.stApp {
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    color: #f0f0f0;
-}
-
-/* sidebar */
-[data-testid="stSidebar"] {
-    background: rgba(255,255,255,0.05);
-    border-right: 1px solid rgba(255,255,255,0.1);
-}
-
-/* headings */
-h1, h2, h3 {
-    font-family: 'Sora', sans-serif;
-    color: #ffffff;
-}
-
-/* metric cards */
-[data-testid="stMetric"] {
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 16px;
-    padding: 20px;
-    backdrop-filter: blur(10px);
-}
-[data-testid="stMetricLabel"]  { color: #a0a0c0 !important; font-size: 13px; }
-[data-testid="stMetricValue"]  { color: #ffffff !important; font-size: 28px; font-weight: 700; }
-
-/* buttons */
-.stButton > button {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    padding: 14px 28px;
-    font-family: 'Sora', sans-serif;
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    transition: all 0.3s ease;
-    width: 100%;
-}
-.stButton > button:hover {
-    background: linear-gradient(135deg, #764ba2, #667eea);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102,126,234,0.4);
-}
-
-/* selectbox + number input */
-[data-testid="stSelectbox"] > div,
-[data-testid="stNumberInput"] > div {
-    background: rgba(255,255,255,0.07) !important;
-    border: 1px solid rgba(255,255,255,0.15) !important;
-    border-radius: 10px !important;
-    color: white !important;
-}
-
-/* success box */
-[data-testid="stAlert"] {
-    background: rgba(102, 126, 234, 0.15);
-    border: 1px solid rgba(102, 126, 234, 0.4);
-    border-radius: 14px;
-    color: white;
-}
-
-/* dataframe */
-[data-testid="stDataFrame"] {
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-/* divider */
-hr {
-    border-color: rgba(255,255,255,0.1);
-}
-
-/* sidebar radio */
-[data-testid="stRadio"] label {
-    color: #c0c0d0 !important;
-    font-size: 15px;
-}
-
-/* slider */
-[data-testid="stSlider"] {
-    color: white;
-}
-
-/* tabs */
-.stTabs [data-baseweb="tab"] {
-    background: rgba(255,255,255,0.05);
-    border-radius: 8px 8px 0 0;
-    color: #a0a0c0;
-    font-family: 'Sora', sans-serif;
-}
-.stTabs [aria-selected="true"] {
-    background: rgba(102,126,234,0.3) !important;
-    color: white !important;
-}
-
-/* info card */
-.info-card {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 16px;
-    padding: 20px 24px;
-    margin-bottom: 16px;
-}
-.info-card h4 {
-    margin: 0 0 6px 0;
-    color: #a0a0c0;
-    font-size: 13px;
-    font-family: 'DM Sans';
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-.info-card p {
-    margin: 0;
-    color: white;
-    font-size: 22px;
-    font-weight: 600;
-    font-family: 'Sora';
-}
+html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
+.stApp { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: #f0f0f0; }
+[data-testid="stSidebar"] { background: rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.1); }
+h1, h2, h3 { font-family: 'Sora', sans-serif; color: #ffffff; }
+[data-testid="stMetric"] { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 20px; backdrop-filter: blur(10px); }
+[data-testid="stMetricLabel"] { color: #a0a0c0 !important; font-size: 13px; }
+[data-testid="stMetricValue"] { color: #ffffff !important; font-size: 28px; font-weight: 700; }
+.stButton > button { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 12px; padding: 14px 28px; font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 600; letter-spacing: 0.5px; transition: all 0.3s ease; width: 100%; }
+.stButton > button:hover { background: linear-gradient(135deg, #764ba2, #667eea); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102,126,234,0.4); }
+[data-testid="stSelectbox"] > div, [data-testid="stNumberInput"] > div { background: rgba(255,255,255,0.07) !important; border: 1px solid rgba(255,255,255,0.15) !important; border-radius: 10px !important; color: white !important; }
+[data-testid="stAlert"] { background: rgba(102,126,234,0.15); border: 1px solid rgba(102,126,234,0.4); border-radius: 14px; color: white; }
+hr { border-color: rgba(255,255,255,0.1); }
+[data-testid="stRadio"] label { color: #c0c0d0 !important; font-size: 15px; }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ── load models ───────────────────────────────────────────────
+# ── load everything ───────────────────────────────────────────
 @st.cache_resource
 def load():
     base     = os.path.dirname(os.path.abspath(__file__))
@@ -160,7 +45,8 @@ def load():
     features = joblib.load(os.path.join(base, 'models', 'features.pkl'))
     df       = pd.read_csv(os.path.join(base, 'data', 'processed_data.csv'))
     return reg, cls, le, ui, features, df
-    reg, cls, le, user_item, features, df = load()
+
+reg, cls, le, user_item, features, df = load()
 
 
 # ── sidebar ───────────────────────────────────────────────────
@@ -172,16 +58,13 @@ with st.sidebar:
         <div style='font-size:12px; color:#a0a0c0; margin-top:4px;'>Tourism Experience Analytics</div>
     </div>
     """, unsafe_allow_html=True)
-
     st.markdown("---")
-
     page = st.radio("", [
         "📊  Dashboard",
         "🧳  Classify Visit Mode",
         "⭐  Predict Rating",
         "🎯  Get Recommendations"
     ])
-
     st.markdown("---")
     st.markdown("""
     <div style='font-size:12px; color:#606080; text-align:center; padding-top:10px;'>
@@ -198,7 +81,6 @@ if page == "📊  Dashboard":
     st.markdown("<p style='color:#a0a0c0; margin-top:-10px;'>Live insights from tourism transaction data</p>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # top metrics
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Total Transactions",  f"{len(df):,}")
     c2.metric("Unique Users",        f"{df['UserId'].nunique():,}")
@@ -207,37 +89,30 @@ if page == "📊  Dashboard":
 
     st.markdown("---")
 
-    # row 1
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("#### 🧳 Visit Mode Distribution")
         st.bar_chart(df['VisitMode'].value_counts(), color="#667eea")
-
     with col2:
         st.markdown("#### 🌍 Avg Rating by Continent")
         st.bar_chart(df.groupby('Continent')['Rating'].mean().sort_values(), color="#764ba2")
 
-    # row 2
     col3, col4 = st.columns(2)
     with col3:
         st.markdown("#### 🗺️ Top 10 Countries by Visits")
         st.bar_chart(df['Country'].value_counts().head(10), color="#f093fb")
-
     with col4:
         st.markdown("#### 🏛️ Top Attraction Types")
         st.bar_chart(df['AttractionType'].value_counts().head(8), color="#4facfe")
 
-    # row 3
     col5, col6 = st.columns(2)
     with col5:
         st.markdown("#### 📅 Monthly Travel Trend")
         st.line_chart(df['VisitMonth'].value_counts().sort_index(), color="#43e97b")
-
     with col6:
         st.markdown("#### 📆 Yearly Visit Trend")
         st.bar_chart(df['VisitYear'].value_counts().sort_index(), color="#fa709a")
 
-    # row 4 — full width
     st.markdown("#### 🏆 Top 10 Most Visited Attractions")
     st.bar_chart(df['Attraction'].value_counts().head(10), color="#fee140")
 
@@ -288,14 +163,12 @@ elif page == "🧳  Classify Visit Mode":
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # show all class probabilities if model supports it
         if hasattr(cls, 'predict_proba'):
             proba = cls.predict_proba(inp)[0]
             prob_df = pd.DataFrame({
                 'Visit Mode' : list(le.classes_),
                 'Probability': [round(p * 100, 2) for p in proba]
             }).sort_values('Probability', ascending=False)
-
             st.markdown("#### 📊 Probability Breakdown")
             st.dataframe(prob_df, use_container_width=True, hide_index=True)
             st.bar_chart(prob_df.set_index('Visit Mode')['Probability'], color=color)
@@ -325,7 +198,6 @@ elif page == "⭐  Predict Rating":
         pred = reg.predict(inp)[0]
         pred = round(min(max(pred, 1.0), 5.0), 2)
 
-        # color based on rating
         if pred >= 4.0:
             color = '#43e97b'
             label = 'Excellent'
@@ -377,7 +249,7 @@ elif page == "🎯  Get Recommendations":
     if uid in user_item.index:
         visited_count = user_item.loc[uid].dropna().shape[0]
         avg_given     = df[df['UserId'] == uid]['Rating'].mean()
-        ic1, ic2 = st.columns(2)
+        ic1, ic2      = st.columns(2)
         ic1.metric("Attractions Visited", visited_count)
         ic2.metric("Your Avg Rating Given", f"{avg_given:.2f} ⭐" if not pd.isna(avg_given) else "N/A")
 
@@ -385,33 +257,23 @@ elif page == "🎯  Get Recommendations":
 
     if st.button("🎯  Get My Recommendations"):
         if uid not in user_item.index:
-            st.warning("⚠️ User ID not found in dataset. Please try a different one.")
+            st.warning("⚠️ User ID not found. Please try a different one.")
         else:
             with st.spinner("Finding similar users..."):
-                from sklearn.metrics.pairwise import cosine_similarity
-                import numpy as np
-
-                # get this user's ratings vector
-                user_vector = user_item.loc[[uid]].fillna(0).values
-
-                # fill matrix with 0 for NaN
-                filled = user_item.fillna(0).values
-
-                
-                sim_scores = cosine_similarity(user_vector, filled)[0]
-
-                # top 10 similar users (excluding self)
-                top_indices = np.argsort(sim_scores)[::-1][1:11]
+                user_vector   = user_item.loc[[uid]].fillna(0).values
+                filled        = user_item.fillna(0).values
+                sim_scores    = cosine_similarity(user_vector, filled)[0]
+                top_indices   = np.argsort(sim_scores)[::-1][1:11]
                 similar_users = user_item.index[top_indices].tolist()
 
-                seen     = user_item.loc[uid].dropna().index.tolist()
-                avg          = user_item.loc[similar_users].mean(axis=0, skipna=True)
-                global_mean  = df['Rating'].mean()
-                avg          = avg.fillna(global_mean)
-                unseen       = avg.drop(index=seen, errors='ignore').sort_values(ascending=False).head(n)
+                seen        = user_item.loc[uid].dropna().index.tolist()
+                avg         = user_item.loc[similar_users].mean(axis=0, skipna=True)
+                global_mean = df['Rating'].mean()
+                avg         = avg.fillna(global_mean)
+                unseen      = avg.drop(index=seen, errors='ignore').sort_values(ascending=False).head(n)
 
-                name_map = df[['AttractionId', 'Attraction']].drop_duplicates().set_index('AttractionId')['Attraction']
-                type_map = df[['AttractionId', 'AttractionType']].drop_duplicates().set_index('AttractionId')['AttractionType']
+                name_map = df[['AttractionId','Attraction']].drop_duplicates().set_index('AttractionId')['Attraction']
+                type_map = df[['AttractionId','AttractionType']].drop_duplicates().set_index('AttractionId')['AttractionType']
 
                 result = pd.DataFrame({
                     'Attraction'      : unseen.index.map(name_map),
